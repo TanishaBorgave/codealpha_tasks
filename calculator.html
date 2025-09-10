@@ -1,0 +1,490 @@
+<!-- index.html (All-in-one file) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Calculator</title>
+    <!-- Link to Tailwind CSS for utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Consolidated CSS -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        .calculator {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* rounded-3xl */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-2xl */
+            padding: 2rem; /* p-8 */
+            width: 91.666667%; /* w-11/12 */
+            max-width: 400px; /* max-w-sm */
+        }
+        
+        .display {
+            background-color: #e5e7eb; /* bg-gray-200 */
+            border-radius: 0.75rem; /* rounded-xl */
+            padding: 1rem; /* p-4 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: right;
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 600; /* font-semibold */
+            color: #1f2937; /* text-gray-800 */
+            overflow-x: auto;
+            min-height: 4rem;
+        }
+        
+        .btn {
+            color: #1f2937; /* text-gray-800 */
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            padding: 1rem; /* p-4 */
+            border-radius: 0.75rem; /* rounded-xl */
+            cursor: pointer;
+            transition-property: all;
+            transition-duration: 200ms;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            border: none;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-default {
+            background-color: #d1d5db; /* bg-gray-300 */
+        }
+
+        .btn-operator {
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: #ffffff;
+        }
+
+        .btn-equals {
+            background-color: #22c55e; /* bg-green-500 */
+            color: #ffffff;
+        }
+
+        .btn-clear {
+            background-color: #ef4444; /* bg-red-500 */
+            color: #ffffff;
+        }
+
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #problemInput {
+            width: 100%;
+            height: 5rem; /* h-20 */
+            padding: 0.5rem; /* p-2 */
+            margin-bottom: 1rem; /* mb-4 */
+            border-radius: 0.75rem; /* rounded-xl */
+            border-width: 2px;
+            border-color: #d1d5db; /* border-gray-300 */
+            outline: none;
+            transition-property: border-color;
+            transition-duration: 200ms;
+            resize: none;
+        }
+        
+        #problemInput:focus {
+            border-color: #3b82f6; /* focus:border-blue-500 */
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(31, 41, 55, 0.75);
+            z-index: 50;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 1.5rem;
+            z-index: 50;
+            max-width: 400px;
+            width: 91.666667%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="calculator bg-white rounded-3xl shadow-2xl p-8 w-11/12 max-w-sm">
+        <!-- AI Problem Input -->
+        <textarea id="problemInput" placeholder="Type a math problem here... (e.g., 'What is 15% of 200?')" class="w-full h-20 p-2 mb-4 rounded-xl border-2 border-gray-300 focus:outline-none focus:border-blue-500 transition-colors duration-200 resize-none"></textarea>
+        <button id="solveProblemBtn" class="w-full btn bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white mb-4">✨ Solve Problem</button>
+
+        <!-- Calculator Display -->
+        <div id="display" class="display bg-gray-200 rounded-xl p-4 mb-6 text-right text-4xl font-semibold text-gray-800 overflow-x-auto">
+            0
+        </div>
+
+        <!-- Calculator Buttons Grid -->
+        <div class="buttons grid grid-cols-4 gap-4">
+            <button class="btn btn-clear bg-red-500 hover:bg-red-600 active:bg-red-700 text-white" onclick="clearDisplay()">C</button>
+            <button class="btn btn-operator bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white" onclick="deleteLast()">DEL</button>
+            <button class="btn btn-operator bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white" onclick="appendOperator('/')">/</button>
+            <button class="btn btn-operator bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white" onclick="appendOperator('*')">*</button>
+            
+            <button class="btn btn-default" onclick="appendNumber('7')">7</button>
+            <button class="btn btn-default" onclick="appendNumber('8')">8</button>
+            <button class="btn btn-default" onclick="appendNumber('9')">9</button>
+            <button class="btn btn-operator bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white" onclick="appendOperator('-')">-</button>
+            
+            <button class="btn btn-default" onclick="appendNumber('4')">4</button>
+            <button class="btn btn-default" onclick="appendNumber('5')">5</button>
+            <button class="btn btn-default" onclick="appendNumber('6')">6</button>
+            <button class="btn btn-operator bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white" onclick="appendOperator('+')">+</button>
+            
+            <button class="btn btn-default" onclick="appendNumber('1')">1</button>
+            <button class="btn btn-default" onclick="appendNumber('2')">2</button>
+            <button class="btn btn-default" onclick="appendNumber('3')">3</button>
+            <button class="btn btn-equals bg-green-500 hover:bg-green-600 active:bg-green-700 text-white col-span-2" onclick="calculateResult()">=</button>
+
+            <button class="btn btn-default" onclick="appendNumber('0')">0</button>
+            <button class="btn btn-default" onclick="appendNumber('.')">.</button>
+        </div>
+        <!-- AI Explain Button -->
+        <button id="explainBtn" class="w-full btn bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white mt-4">✨ Explain Calculation</button>
+    </div>
+
+    <!-- Loading Overlay and Message Box -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16"></div>
+    </div>
+    <div id="messageBox" class="message-box">
+        <p id="messageText" class="text-gray-800 text-lg text-center mb-4"></p>
+        <button class="btn bg-blue-500 hover:bg-blue-600 text-white" onclick="hideMessage()">OK</button>
+    </div>
+    
+    <!-- Consolidated JavaScript -->
+    <script>
+        // Get all the necessary DOM elements
+        const display = document.getElementById('display');
+        const problemInput = document.getElementById('problemInput');
+        const solveProblemBtn = document.getElementById('solveProblemBtn');
+        const explainBtn = document.getElementById('explainBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+
+        // The current expression to be evaluated
+        let expression = '';
+        // Flag to check if the last action was a calculation
+        let lastWasResult = false;
+        // Gemini API configuration
+        const apiKey = ""; // API key is left empty and will be provided by the runtime
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+        /**
+         * Shows the loading overlay.
+         */
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        /**
+         * Hides the loading overlay.
+         */
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+
+        /**
+         * Displays a message box with the given text.
+         * @param {string} text The text to display.
+         */
+        function showMessage(text) {
+            messageText.innerText = text;
+            messageBox.style.display = 'flex';
+        }
+
+        /**
+         * Hides the message box.
+         */
+        function hideMessage() {
+            messageBox.style.display = 'none';
+        }
+
+        /**
+         * A retry wrapper for fetch calls with exponential backoff.
+         * @param {Function} fetcher The fetch function to execute.
+         * @param {number} retries The number of retries to attempt.
+         * @param {number} delay The initial delay in milliseconds.
+         */
+        async function retryFetch(fetcher, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetcher();
+                    if (response.ok) {
+                        return response;
+                    } else if (response.status === 429) { // Too Many Requests
+                        console.warn(`Retry attempt ${i + 1} due to throttling...`);
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2; // Exponential backoff
+                    } else {
+                        throw new Error(`API returned status ${response.status}`);
+                    }
+                } catch (error) {
+                    if (i === retries - 1) {
+                        console.error('Fetch failed after multiple retries:', error);
+                        throw error;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Updates the calculator display with the current expression.
+         */
+        function updateDisplay() {
+            display.innerText = expression === '' ? '0' : expression;
+        }
+
+        /**
+         * Appends a number or a decimal point to the expression.
+         * @param {string} value The number or '.' to append.
+         */
+        function appendNumber(value) {
+            // If the last action was a calculation, start a new expression
+            if (lastWasResult) {
+                expression = '';
+                lastWasResult = false;
+            }
+        
+            // Prevent multiple decimals in a single number
+            if (value === '.' && expression.includes('.') && isNaN(parseInt(expression.slice(-1)))) {
+                return;
+            }
+            
+            // Allow a decimal to be placed after an operator
+            if (value === '.' && (expression.endsWith('+') || expression.endsWith('-') || expression.endsWith('*') || expression.endsWith('/'))) {
+                expression += '0';
+            }
+            
+            expression += value;
+            updateDisplay();
+        }
+
+        /**
+         * Appends an operator to the expression.
+         * @param {string} operator The operator to append.
+         */
+        function appendOperator(operator) {
+            lastWasResult = false;
+            // Prevent starting with an operator or multiple operators in a row
+            const lastChar = expression.slice(-1);
+            if (expression === '' && ['+', '*', '/'].includes(operator)) {
+                return;
+            }
+            if (['+', '-', '*', '/'].includes(lastChar)) {
+                // If the last character is an operator, replace it
+                if (['+', '-', '*', '/'].includes(lastChar)) {
+                    expression = expression.slice(0, -1) + operator;
+                }
+                return;
+            }
+            expression += operator;
+            updateDisplay();
+        }
+
+        /**
+         * Deletes the last character from the expression.
+         */
+        function deleteLast() {
+            if (lastWasResult) {
+                expression = '';
+                lastWasResult = false;
+            } else {
+                expression = expression.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        /**
+         * Clears the display and resets the expression.
+         */
+        function clearDisplay() {
+            expression = '';
+            lastWasResult = false;
+            updateDisplay();
+        }
+
+        /**
+         * Calculates the result of the current expression using a safer method than eval().
+         */
+        function calculateResult() {
+            if (expression === '') {
+                return;
+            }
+            try {
+                // Use a function constructor to perform the calculation safely
+                const result = new Function('return ' + expression)();
+                expression = result.toString();
+                lastWasResult = true;
+                updateDisplay();
+            } catch (e) {
+                expression = 'Error';
+                lastWasResult = true;
+                updateDisplay();
+            }
+        }
+
+        /**
+         * Uses the Gemini API to solve a natural language math problem.
+         */
+        async function solveProblem() {
+            const problem = problemInput.value;
+            if (!problem) {
+                showMessage('Please enter a problem to solve.');
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                // The prompt asks the LLM to solve the problem and provide the numerical result.
+                const prompt = `Solve the following math problem. Provide the final numerical answer. Do not include any explanations or extra text, just the number. Problem: ${problem}`;
+                const payload = {
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                };
+
+                const response = await retryFetch(() => fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+
+                const result = await response.json();
+                const solvedText = result.candidates[0].content.parts[0].text.trim();
+                
+                // Use a more specific prompt to get the explanation after we have the number
+                const explanationPrompt = `Explain the solution to this problem: "${problem}" using the result "${solvedText}". Use simple terms, and do not include the final numerical answer in your explanation.`;
+                const explanationPayload = {
+                    contents: [{
+                        parts: [{ text: explanationPrompt }]
+                    }]
+                };
+
+                const explanationResponse = await retryFetch(() => fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(explanationPayload)
+                }));
+                const explanationResult = await explanationResponse.json();
+                const explanationText = explanationResult.candidates[0].content.parts[0].text.trim();
+
+                // Update the calculator display and show the explanation
+                expression = solvedText;
+                lastWasResult = true;
+                updateDisplay();
+                showMessage(explanationText);
+
+            } catch (error) {
+                console.error('Error solving problem:', error);
+                showMessage('Could not solve the problem. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /**
+         * Uses the Gemini API to explain the current calculation.
+         */
+        async function explainCalculation() {
+            if (expression === '' || isNaN(expression)) {
+                showMessage('Please perform a calculation first to get an explanation.');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // The prompt asks the LLM to explain the current calculation on the display.
+                const prompt = `Explain the following mathematical calculation in simple, easy-to-understand terms: ${expression}`;
+                const payload = {
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                };
+
+                const response = await retryFetch(() => fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+
+                const result = await response.json();
+                const explanation = result.candidates[0].content.parts[0].text.trim();
+                showMessage(explanation);
+
+            } catch (error) {
+                console.error('Error explaining calculation:', error);
+                showMessage('Could not explain the calculation. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Add event listeners for the new buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            solveProblemBtn.addEventListener('click', solveProblem);
+            explainBtn.addEventListener('click', explainCalculation);
+        });
+
+        // Add keyboard support
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            if (/[0-9]/.test(key) || key === '.') {
+                appendNumber(key);
+            } else if (['+', '-', '*', '/'].includes(key)) {
+                appendOperator(key);
+            } else if (key === 'Enter' || key === '=') {
+                calculateResult();
+            } else if (key === 'Backspace') {
+                deleteLast();
+            } else if (key === 'Escape') {
+                clearDisplay();
+            }
+        });
+    </script>
+</body>
+</html>
